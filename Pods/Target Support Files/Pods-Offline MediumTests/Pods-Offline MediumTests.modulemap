@@ -1,0 +1,6 @@
+framework module Pods_Offline_MediumTests {
+  umbrella header "Pods-Offline MediumTests-umbrella.h"
+
+  export *
+  module * { export * }
+}
