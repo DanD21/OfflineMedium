@@ -85,7 +85,11 @@ class HomeTableViewController: UITableViewController, UISearchBarDelegate {
 
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? HomeTableViewCell else {
+        // Type-safe cell dequeuing
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: CellIdentifier.postCell.identifier,
+            for: indexPath
+        ) as? HomeTableViewCell else {
             return UITableViewCell()
         }
 

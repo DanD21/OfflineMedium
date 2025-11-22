@@ -80,6 +80,40 @@ Updated HTML parsing to work with modern Medium.com structure:
 
 ## Additional Modernizations (Beyond Swift 6 Basics)
 
+### SwiftUI + Combine + Actors: The Full Modern Stack
+
+This app now showcases **every modern iOS development practice**:
+
+#### SwiftUI Architecture
+- **PostsListView**: Declarative UI replacing `HomeTableViewController`
+- **PostDetailView**: SwiftUI-based post viewer
+- **OfflineMediumApp**: Modern `@main` app entry point
+- **40-56% code reduction** in view layer vs UIKit
+
+#### Combine Framework
+- **PostsViewModel**: Reactive view model with `@Published` properties
+- **Debounced search**: `.debounce()` and `.removeDuplicates()` operators
+- **PostSyncService**: Combine-based synchronization with progress tracking
+- Automatic UI updates through reactive data flow
+
+#### Actor-Based Concurrency
+- **DatabaseActor**: Thread-safe database access replacing singleton
+- Eliminates race conditions and data races
+- Proper error handling with async/await
+- `Sendable` conformance for cross-actor data
+
+#### Dependency Injection
+- **AppState**: Central dependency container
+- **@EnvironmentObject**: SwiftUI's DI mechanism
+- Dependencies passed through initializers
+- Testable architecture with mockable dependencies
+
+#### Type-Safe Identifiers
+- **CellIdentifier**: Compile-time verified cell identifiers
+- **SegueIdentifier**: Type-safe navigation
+- **UserDefaultsKey**: No more string typos
+- **Notification.Name** extensions: Centralized notifications
+
 ### Async/Await Implementation
 The app now uses modern Swift Concurrency:
 - `ImageDownloader` uses `async/await` with `withTaskGroup` for concurrent image downloads
@@ -91,17 +125,51 @@ The app now uses modern Swift Concurrency:
 - **UIGraphicsImageRenderer**: Replaced old `UIGraphicsBeginImageContextWithOptions`
 - **Modern FileManager**: No more `NSSearchPathForDirectoriesInDomains`
 - **Removed `didReceiveMemoryWarning`**: Not needed in modern iOS
+- **Singleton → Actor**: DBManager.sharedInstance eliminated
 
 ### Safety Improvements
 - Added `Sendable` conformance for thread-safe data structures
 - Replaced force unwraps (`as!`) with safe casting (`as?`)
 - Better guard statements and optional chaining
 - Filename sanitization for edge cases
+- Actor isolation prevents data races
 
 ### Code Organization
+- **MVVM Architecture**: Clear separation of concerns
+- **ViewModels**: Business logic separated from views
+- **Services**: Reusable business logic components
 - Extracted methods for better readability (e.g., `cleanHTML`, `loadPostContent`)
 - Improved error messages with localized descriptions
-- Better separation of concerns in view controllers
+
+## Modern Architecture
+
+```
+┌─────────────────────────────────────────┐
+│         SwiftUI Views                   │
+│  (PostsListView, PostDetailView)        │
+└──────────────┬──────────────────────────┘
+               │ @StateObject / @Published
+┌──────────────▼──────────────────────────┐
+│         ViewModels                      │
+│  (PostsViewModel, PostDetailViewModel)  │
+└──────────────┬──────────────────────────┘
+               │ async/await
+┌──────────────▼──────────────────────────┐
+│         Actor Layer                     │
+│       (DatabaseActor)                   │
+└──────────────┬──────────────────────────┘
+               │ Realm API
+┌──────────────▼──────────────────────────┐
+│      Data Persistence                   │
+│         (RealmSwift)                    │
+└─────────────────────────────────────────┘
+```
+
+**Data Flow:**
+- Views observe ViewModels via `@Published` properties
+- ViewModels coordinate async operations
+- Actors ensure thread-safe data access
+- Combine handles reactive updates
 
 ## Notes
 

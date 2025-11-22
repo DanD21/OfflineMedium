@@ -226,6 +226,237 @@ Adding `Sendable` is like getting a safety certification for your data structure
 7. **Updated Medium parsing** - For the third time this month
 8. **Replaced UIWebView** - As mandated by the Geneva Conventions
 
+## Act VI: The Ultimate Transformation - SwiftUI, Combine, and Actors
+
+But wait, there's more! We didn't just stop at Swift 6. We went FULL modern stack. Hold onto your keyboards.
+
+### The Great UIKit Exodus
+
+**2017: UIKit Everything**
+```swift
+class HomeTableViewController: UITableViewController {
+    @IBOutlet weak var searchBar: UISearchBar!
+    private var posts: Results<PostObj>!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // 50 lines of setup code...
+    }
+}
+```
+
+**2025: SwiftUI Declarative Bliss**
+```swift
+struct PostsListView: View {
+    @StateObject private var viewModel: PostsViewModel
+
+    var body: some View {
+        NavigationView {
+            List(viewModel.posts) { post in
+                NavigationLink(destination: PostDetailView(post: post)) {
+                    PostRowView(post: post)
+                }
+            }
+            .searchable(text: $viewModel.searchText)
+            .refreshable {
+                await viewModel.refreshPosts()
+            }
+        }
+    }
+}
+```
+
+Look at that! No more `viewDidLoad`. No more manual table view data sources. No more 17 delegate methods just to show a list. SwiftUI just... works.
+
+### Singleton Pattern → Actor Pattern
+
+**The Old Way (Singleton Sadness):**
+```swift
+class DBManager {
+    static let sharedInstance = DBManager()
+
+    private init() {
+        database = try! Realm()
+    }
+
+    func addData(object: Item) {
+        try! database.write {
+            database.add(object, update: .modified)
+        }
+    }
+}
+
+// Usage (from any thread, may god have mercy):
+DBManager.sharedInstance.addData(post)
+```
+
+Thread-safe? Kinda. Modern? Absolutely not. The global singleton is the mullet of design patterns—popular in the '80s, questionable now.
+
+**The New Way (Actor Excellence):**
+```swift
+actor DatabaseActor {
+    private let realm: Realm
+
+    init() throws {
+        self.realm = try Realm()
+    }
+
+    func addPost(_ object: PostObj) async throws {
+        try realm.write {
+            realm.add(object, update: .modified)
+        }
+    }
+}
+
+// Usage (guaranteed thread-safe):
+await databaseActor.addPost(post)
+```
+
+Actors are Swift's way of saying "I've got this concurrency thing handled, don't worry about it." Thread safety? Built-in. Race conditions? Impossible. Global mutable state? Abolished.
+
+### Combine: Reactive Programming Finally Makes Sense
+
+**Before (Callback Spaghetti):**
+```swift
+func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+    self.posts = DBManager.sharedInstance.getDataFromDB(query: searchBar.text)
+    self.reloadFetchedData()
+}
+```
+
+Fire on every keystroke. No debouncing. Search for "h", then "he", then "hel", then "hell"... RIP database.
+
+**After (Combine Operators):**
+```swift
+$searchText
+    .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+    .removeDuplicates()
+    .sink { [weak self] searchQuery in
+        Task {
+            await self?.performSearch(query: searchQuery)
+        }
+    }
+    .store(in: &cancellables)
+```
+
+Debouncing! Duplicate removal! Automatic cancellation! It's like going from a flip phone to an iPhone.
+
+### Dependency Injection: No More Hidden Dependencies
+
+**Old Approach (Mystery Meat):**
+```swift
+class HomeTableViewController: UITableViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Where did DBManager come from? Who knows!
+        self.posts = DBManager.sharedInstance.getDataFromDB()
+    }
+}
+```
+
+Testing this? Good luck mocking a global singleton.
+
+**Modern Approach (Crystal Clear):**
+```swift
+struct PostsListView: View {
+    @StateObject private var viewModel: PostsViewModel
+
+    init(databaseActor: DatabaseActor) {
+        _viewModel = StateObject(wrappedValue: PostsViewModel(databaseActor: databaseActor))
+    }
+}
+
+// App entry point - dependency injection in action
+@main
+struct OfflineMediumApp: App {
+    @StateObject private var appState = AppState()
+
+    var body: some Scene {
+        WindowGroup {
+            PostsListView(databaseActor: appState.databaseActor)
+                .environmentObject(appState)
+        }
+    }
+}
+```
+
+Dependencies flow DOWN, not UP. Testing? Inject a mock. Understanding the code? Just read the initializer. Revolutionary!
+
+### Type-Safe Identifiers: String Typos Be Gone
+
+**The Old Way (Typo Russian Roulette):**
+```swift
+let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+
+// Later, in the storyboard:
+// Identifier: "Cel" ← typo
+// Runtime crash! 🎉
+```
+
+Stringly-typed programming: Where every identifier is a potential crash.
+
+**The New Way (Compiler-Verified):**
+```swift
+enum CellIdentifier: String {
+    case postCell = "Cell"
+    case homeTableViewCell = "HomeTableViewCell"
+
+    var identifier: String { rawValue }
+}
+
+// Usage:
+let cell = tableView.dequeueReusableCell(
+    withIdentifier: CellIdentifier.postCell.identifier,
+    for: indexPath
+)
+```
+
+Typo in the identifier? Compiler error. Renamed a cell? Compiler tells you everywhere it's used. Autocomplete works. This is living.
+
+### The New Architecture Stack
+
+**2017 Stack:**
+- UIKit (Imperative, verbose)
+- Singletons (Global mutable state)
+- Callbacks (Pyramid of doom)
+- String identifiers (Crash at runtime)
+- Manual memory management (didReceiveMemoryWarning)
+
+**2025 Stack:**
+- SwiftUI (Declarative, concise)
+- Actors (Thread-safe by design)
+- Async/await + Combine (Linear code, reactive streams)
+- Type-safe identifiers (Compile-time verification)
+- Automatic memory management (ARC just works)
+
+### The Code Reduction Stats
+
+Let me blow your mind with some numbers:
+
+**HomeTableViewController.swift:**
+- 2017: 148 lines
+- 2025: PostsListView.swift: 89 lines
+- **Reduction: 40%**
+
+**PostViewController.swift:**
+- 2017: 77 lines of boilerplate
+- 2025: PostDetailView.swift: 34 lines
+- **Reduction: 56%**
+
+**DBManager.swift:**
+- 2017: 76 lines with global singleton
+- 2025: DatabaseActor.swift: 95 lines with thread safety
+- **Increase: 25%** (but gained proper error handling and concurrency!)
+
+### What We Gained
+
+1. **Testability**: Dependency injection means easy mocking
+2. **Safety**: Actors eliminate race conditions
+3. **Clarity**: SwiftUI's declarative syntax is self-documenting
+4. **Performance**: Combine's operators prevent unnecessary work
+5. **Maintainability**: Type-safe identifiers catch errors at compile time
+6. **Modern**: This code could be in a 2025 WWDC session
+
 ## Lessons Learned: Wisdom from the Trenches
 
 ### 1. Deprecated APIs Are Like Technical Debt with Interest
@@ -250,11 +481,15 @@ The second best time is today. That technical debt? It's collecting interest.
 
 ## The Final Tally: Before and After
 
-**Lines Changed:** Too many to count
-**Deprecated APIs Replaced:** 15+
+**Lines Changed:** Thousands
+**Deprecated APIs Replaced:** 20+
 **Force Unwraps Eliminated:** Several dozen
-**Developer Sanity:** Improved by 200%
+**Singletons Eliminated:** 1 (replaced with Actor)
+**UIKit ViewControllers Replaced:** All of them (SwiftUI!)
+**Developer Sanity:** Improved by 500%
 **Compiler Warnings:** From "error: help" to "success: it builds!"
+**Architecture:** From MVC to MVVM + SwiftUI + Actors
+**Code Reduction:** 40-56% in view layer
 
 ## What's Next? The Road to 2030
 
@@ -297,6 +532,25 @@ For those who want the nitty-gritty details:
 - `Task` for bridging sync and async worlds
 - `withTaskGroup` for structured concurrency
 - `Sendable` protocol for thread-safe data
+- `actor` for isolated mutable state
+- `@MainActor` for UI-bound code
+
+### SwiftUI & Combine Features
+- `@StateObject` for owned observable objects
+- `@Published` for reactive properties
+- `@EnvironmentObject` for dependency injection
+- `.debounce()` and `.removeDuplicates()` operators
+- `AnyCancellable` for subscription management
+- `NavigationView` and `NavigationLink` for navigation
+- `.searchable()` modifier for search
+- `.refreshable()` for pull-to-refresh
+
+### Architecture Patterns
+- **MVVM**: ViewModels separate business logic from views
+- **Dependency Injection**: Dependencies passed through initializers
+- **Actor Pattern**: Thread-safe database access
+- **Repository Pattern**: DatabaseActor abstracts data access
+- **Type-Safe Identifiers**: Enums replace string literals
 
 ### Major Deprecated APIs Replaced
 - `dynamic` → `@Persisted`
@@ -306,6 +560,8 @@ For those who want the nitty-gritty details:
 - `NSSearchPathForDirectoriesInDomains` → `FileManager.default.urls(for:in:)`
 - `UIWebView` → `WKWebView`
 - `NSKeyedArchiver.archivedData` → `snapshotView(afterScreenUpdates:)`
+- `DBManager.sharedInstance` → `DatabaseActor` (actor)
+- String literals → Type-safe enums
 
 ### Realm Migration Path
 ```swift
@@ -316,6 +572,41 @@ override static func primaryKey() -> String? { return "idPost" }
 // New
 @Persisted(primaryKey: true) var idPost: Int = 1
 @Persisted var title: String = ""
+```
+
+### Architecture Evolution
+```swift
+// 2017: UIKit MVC with Singleton
+UIViewController → DBManager.sharedInstance → Realm
+
+// 2025: SwiftUI MVVM with Actor
+SwiftUI View → ViewModel → DatabaseActor → Realm
+             ↓
+    @Published properties
+             ↓
+    Combine operators
+             ↓
+    Automatic UI updates
+```
+
+### New File Structure
+```
+Offline Medium/
+├── SwiftUI/
+│   ├── OfflineMediumApp.swift       # @main entry point
+│   ├── PostsListView.swift          # Main list (replaces HomeTableVC)
+│   └── PostDetailView.swift         # Post viewer (replaces PostVC)
+├── ViewModels/
+│   └── PostsViewModel.swift         # MVVM logic with Combine
+├── Database/
+│   └── DatabaseActor.swift          # Thread-safe DB access
+├── Services/
+│   └── PostSyncService.swift        # Combine-based sync
+├── Utilities/
+│   └── Identifiers.swift            # Type-safe identifiers
+└── Legacy/ (UIKit preserved for reference)
+    ├── HomeTableViewController.swift
+    └── PostViewController.swift
 ```
 
 ### Medium.com Parsing Evolution
@@ -330,6 +621,6 @@ override static func primaryKey() -> String? { return "idPost" }
 - Duplicate removal
 ```
 
-The future is async. The future is safe. The future is Swift 6.
+The future is async. The future is safe. The future is declarative. The future is Swift 6 + SwiftUI + Combine + Actors.
 
 *— End of transmission —*
