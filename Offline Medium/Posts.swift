@@ -9,17 +9,13 @@
 import Foundation
 import RealmSwift
 
-class Post: Object{
-    dynamic var idPost: Int = 1
-    dynamic var author: String = ""
-    dynamic var title: String = ""
-    dynamic var mainImage: Data?
-    dynamic var timestamp = 0
-    dynamic var html: Data?
-    
-    override static func primaryKey() -> String? {
-        return "idPost"
-    }
+class Post: Object {
+    @Persisted(primaryKey: true) var idPost: Int = 1
+    @Persisted var author: String = ""
+    @Persisted var title: String = ""
+    @Persisted var mainImage: Data?
+    @Persisted var timestamp: Int = 0
+    @Persisted var html: Data?
 }
 
 
@@ -30,8 +26,8 @@ struct PostViewModel {
         creationDate = "\(model.timestamp)"
     }
 }
-class Images: Object{
-    dynamic var id = 1
-    dynamic var idPost = 1
-    dynamic var imgUrl: String = ""
+class Images: Object {
+    @Persisted(primaryKey: true) var id: Int = 1
+    @Persisted var idPost: Int = 1
+    @Persisted var imgUrl: String = ""
 }

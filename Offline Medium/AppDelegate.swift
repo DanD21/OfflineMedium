@@ -15,15 +15,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     
     
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
-        
+
         let navigationBarAppearace = UINavigationBar.appearance()
         let mediumGreen = UIColor(red: 0.125490196078431, green: 0.701960784313725, blue: 0.576470588235294, alpha: 1.0)
         navigationBarAppearace.tintColor = .white
         navigationBarAppearace.barTintColor = mediumGreen
-        
-        navigationBarAppearace.titleTextAttributes = [NSFontAttributeName: UIFont(name: "NoeDisplay-Bold", size: 24)!,  NSForegroundColorAttributeName:UIColor.white]
+
+        navigationBarAppearace.titleTextAttributes = [NSAttributedString.Key.font: UIFont(name: "NoeDisplay-Bold", size: 24)!, NSAttributedString.Key.foregroundColor: UIColor.white]
 
         return true
     }
@@ -53,8 +53,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     // MARK: - Core Data stack
-    
-    @available(iOS 10.0, *)
+
     lazy var persistentContainer: NSPersistentContainer = {
         /*
          The persistent container for the application. This implementation
@@ -84,24 +83,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     // MARK: - Core Data Saving support
     
-    func saveContext () {
-        if #available(iOS 10.0, *) {
-            let context = persistentContainer.viewContext
-            if context.hasChanges {
-                do {
-                    try context.save()
-                } catch {
-                    // Replace this implementation with code to handle the error appropriately.
-                    // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                    let nserror = error as NSError
-                    fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
-                }
+    func saveContext() {
+        let context = persistentContainer.viewContext
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch {
+                // Replace this implementation with code to handle the error appropriately.
+                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
+                let nserror = error as NSError
+                fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
             }
-
-        } else {
-            // Fallback on earlier versions
         }
-        }
+    }
     
 }
 

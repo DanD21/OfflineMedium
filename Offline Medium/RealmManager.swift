@@ -10,25 +10,21 @@ import Foundation
 import RealmSwift
 
 class Item: Object {
-    
+
 }
 
 // Definition of model objects:
-class PostObj: Item{
-    dynamic var idPost = UUID().uuidString
-    dynamic var author: String = ""
-    dynamic var title: String = ""
-    dynamic var mainImage: String = ""
-    dynamic var html: String = ""
-    let postImages = List<ImagesObj>()
-    
-    override static func primaryKey() -> String? {
-        return "idPost"
-    }
+class PostObj: Item {
+    @Persisted(primaryKey: true) var idPost: String = UUID().uuidString
+    @Persisted var author: String = ""
+    @Persisted var title: String = ""
+    @Persisted var mainImage: String = ""
+    @Persisted var html: String = ""
+    @Persisted var postImages = List<ImagesObj>()
 }
 
-class ImagesObj: Item{
-    dynamic var imgUrl: String = ""
+class ImagesObj: Item {
+    @Persisted var imgUrl: String = ""
 }
 
 /*

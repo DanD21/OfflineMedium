@@ -30,9 +30,9 @@ class DBManager {
         return results
     }
     
-    func addData(object: Item)   {
+    func addData(object: Item) {
         try! database.write {
-            database.add(object, update: true)
+            database.add(object, update: .modified)
         }
     }
     
@@ -68,7 +68,7 @@ class DBManager {
                     
                     realmPost.postImages.append(imageObj)
                 }
-                database.add(realmPost, update: true)
+                database.add(realmPost, update: .modified)
             }
         }
     }
