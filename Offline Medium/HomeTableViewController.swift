@@ -77,10 +77,7 @@ class HomeTableViewController: UITableViewController, UISearchBarDelegate {
         tableView.reloadData()
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
+    // didReceiveMemoryWarning is deprecated and no longer needed in modern iOS
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.posts.count
@@ -88,28 +85,22 @@ class HomeTableViewController: UITableViewController, UISearchBarDelegate {
 
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as! HomeTableViewCell
-        
-        let index = Int(indexPath.row)
-        let post = self.posts[index]
-        
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? HomeTableViewCell else {
+            return UITableViewCell()
+        }
+
+        let post = posts[indexPath.row]
+
         cell.titleLabel.text = post.title
         cell.authorLabel.text = "By: \(post.author)"
-        
-        let nsDocumentDirectory = FileManager.SearchPathDirectory.documentDirectory
-        let nsUserDomainMask    = FileManager.SearchPathDomainMask.userDomainMask
-        let paths               = NSSearchPathForDirectoriesInDomains(nsDocumentDirectory, nsUserDomainMask, true)
-        if let dirPath          = paths.first
-        {
-            let adding = NSString(string: post.mainImage)
-            let imageURL = URL(fileURLWithPath: dirPath).appendingPathComponent(adding.lastPathComponent)
-            let image    = UIImage(contentsOfFile: imageURL.path)
-            // Do whatever you want with the image
-//            let dataDecoded : Data = Data(base64Encoded: image, options: .ignoreUnknownCharacters)!
-            
-            cell.mainImage.image = image
+
+        // Modern FileManager API - no more NSSearchPathForDirectoriesInDomains
+        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let imagePath = (post.mainImage as NSString).lastPathComponent
+            let imageURL = documentsDirectory.appendingPathComponent(imagePath)
+            cell.mainImage.image = UIImage(contentsOfFile: imageURL.path)
         }
-        
+
         return cell
     }
     
@@ -132,16 +123,16 @@ class HomeTableViewController: UITableViewController, UISearchBarDelegate {
     }
 }
 
+// Modern UIImage extension using UIGraphicsImageRenderer (iOS 10+)
 public extension UIImage {
-    public convenience init?(color: UIColor, size: CGSize = CGSize(width: 1, height: 1)) {
-        let rect = CGRect(origin: .zero, size: size)
-        UIGraphicsBeginImageContextWithOptions(rect.size, false, 0.0)
-        color.setFill()
-        UIRectFill(rect)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        guard let cgImage = image?.cgImage else { return nil }
+    convenience init?(color: UIColor, size: CGSize = CGSize(width: 1, height: 1)) {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { context in
+            color.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+        }
+
+        guard let cgImage = image.cgImage else { return nil }
         self.init(cgImage: cgImage)
     }
 }

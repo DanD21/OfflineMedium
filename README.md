@@ -2,6 +2,8 @@
 
 An iOS app for downloading and reading Medium articles offline by parsing and saving them to a local Realm database.
 
+> **📖 Want the full story?** Check out [EVOLUTION.md](EVOLUTION.md) for an entertaining deep-dive into the journey from Swift 3 to Swift 6!
+
 ## Swift 6 Upgrade
 
 This project has been upgraded to support Swift 6 and modern iOS development:
@@ -76,6 +78,33 @@ Updated HTML parsing to work with modern Medium.com structure:
 - Swift 6.0
 - CocoaPods
 
+## Additional Modernizations (Beyond Swift 6 Basics)
+
+### Async/Await Implementation
+The app now uses modern Swift Concurrency:
+- `ImageDownloader` uses `async/await` with `withTaskGroup` for concurrent image downloads
+- Structured concurrency replaces callback-based DispatchGroups
+- Proper error handling with `do-catch` instead of force-try
+
+### Deprecated API Replacements
+- **UIWebView → WKWebView**: Removed deprecated UIWebView completely
+- **UIGraphicsImageRenderer**: Replaced old `UIGraphicsBeginImageContextWithOptions`
+- **Modern FileManager**: No more `NSSearchPathForDirectoriesInDomains`
+- **Removed `didReceiveMemoryWarning`**: Not needed in modern iOS
+
+### Safety Improvements
+- Added `Sendable` conformance for thread-safe data structures
+- Replaced force unwraps (`as!`) with safe casting (`as?`)
+- Better guard statements and optional chaining
+- Filename sanitization for edge cases
+
+### Code Organization
+- Extracted methods for better readability (e.g., `cleanHTML`, `loadPostContent`)
+- Improved error messages with localized descriptions
+- Better separation of concerns in view controllers
+
 ## Notes
 
 The Medium HTML structure may continue to evolve. If parsing breaks in the future, the parser logic in `BookmarksParser.swift` and `PostParser.swift` may need additional updates to match Medium's latest HTML structure.
+
+For a detailed and entertaining account of all changes made during this modernization, see [EVOLUTION.md](EVOLUTION.md).

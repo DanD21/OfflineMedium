@@ -10,65 +10,65 @@ import Foundation
 import UIKit
 
 class ImageDownloader {
-    
+
     var myPosts = [Post]()
-    
-    init (posts: [Post]) {
+
+    init(posts: [Post]) {
         self.myPosts = posts
     }
     
-    func startDownloadingWithComplition ( complition: @escaping () -> Void ) {
-        let imgGroup = DispatchGroup()
-        
-        for post in self.myPosts {
-            var postImagesArray = post.postImages
-            guard let mainImage = post.mainImage else { continue }
-            postImagesArray.append(mainImage)
-            
-            for postImage in postImagesArray {
-                imgGroup.enter()
-                guard let externalUrl = URL(string: postImage.externalPath) else { continue }
-                self.downloadImageWithURL(url: externalUrl, complition: { image in
-                    
-                    // saving the downloaded image to previously determined local path
-                    
-                    guard let myLocalUrl = postImage.localUrl else { return }
-                    // print(myLocalUrl)
-                    try? image.write(to: myLocalUrl)
+    // Modern async/await version - backwards compatible wrapper
+    func startDownloadingWithComplition(complition: @escaping () -> Void) {
+        Task {
+            await downloadAllImages()
+            complition()
+        }
+    }
 
-                    
-//                    let strBase64 = image.base64EncodedString(options: .lineLength64Characters)
-//                    print("base64 img: " + strBase64)
-//                    try? strBase64.write(to: myLocalUrl, atomically: true, encoding: String.Encoding.utf8)
-//
-//                    if let data = UIImagePNGRepresentation(image) {
-//                        guard let myLocalUrl = postImage.localUrl else { return }
-////                        print(myLocalUrl)
-//                        try? data.write(to: myLocalUrl)
-//                    }
-                    
-                    imgGroup.leave()
-                })
+    // Modern Swift Concurrency approach
+    func downloadAllImages() async {
+        await withTaskGroup(of: Void.self) { group in
+            for post in myPosts {
+                var postImagesArray = post.postImages
+                if let mainImage = post.mainImage {
+                    postImagesArray.append(mainImage)
+                }
+
+                for postImage in postImagesArray {
+                    group.addTask {
+                        await self.downloadAndSaveImage(postImage)
+                    }
+                }
             }
         }
-        imgGroup.wait()
-        // after all images were downloaded
-        complition()
     }
-    
-    func getDataFromUrl(url: URL, completion: @escaping (_ data: Data?, _  response: URLResponse?, _ error: Error?) -> Void) {
-        URLSession.shared.dataTask(with: url) {
-            (data, response, error) in
-            completion(data, response, error)
-            }.resume()
-    }
-    
-    func downloadImageWithURL(url: URL?, complition: @escaping (_ image: NSData) -> Void) {
-        guard let url = url else { return }
-        getDataFromUrl(url: url) { (data, response, error)  in
-            guard let data = data, error == nil else { return }
-            complition( data as NSData )
+
+    private func downloadAndSaveImage(_ postImage: Image) async {
+        guard let externalUrl = URL(string: postImage.externalPath),
+              let localUrl = postImage.localUrl else {
+            return
+        }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: externalUrl)
+            try data.write(to: localUrl)
+        } catch {
+            print("Failed to download image: \(error.localizedDescription)")
         }
     }
     
+    // Legacy methods kept for backwards compatibility
+    func getDataFromUrl(url: URL, completion: @escaping (_ data: Data?, _ response: URLResponse?, _ error: Error?) -> Void) {
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            completion(data, response, error)
+        }.resume()
+    }
+
+    func downloadImageWithURL(url: URL?, complition: @escaping (_ image: NSData) -> Void) {
+        guard let url = url else { return }
+        getDataFromUrl(url: url) { data, response, error in
+            guard let data = data, error == nil else { return }
+            complition(data as NSData)
+        }
+    }
 }
