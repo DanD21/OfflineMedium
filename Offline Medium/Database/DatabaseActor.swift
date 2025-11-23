@@ -93,6 +93,25 @@ actor DatabaseActor {
             }
         }
     }
+    // MARK: - Demo/Sample Data
+
+    /// Seeds the database with sample data for portfolio demonstration
+    func seedWithSampleData() async throws {
+        let generator = SampleDataGenerator()
+        let samplePosts = await generator.generateSampleRealmPosts(count: 15)
+
+        try realm.write {
+            realm.deleteAll()  // Clear existing data
+            for post in samplePosts {
+                realm.add(post, update: .modified)
+            }
+        }
+    }
+
+    /// Check if database is empty
+    func isEmpty() -> Bool {
+        return realm.objects(PostObj.self).isEmpty
+    }
 }
 
 // MARK: - Sendable Conformance

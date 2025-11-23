@@ -46,6 +46,12 @@ class AppState: ObservableObject {
             // Initialize database actor
             let actor = try DatabaseActor()
             self.databaseActor = actor
+
+            // Seed with sample data if empty (Portfolio/Demo mode)
+            if DemoConfiguration.isDemoMode && actor.isEmpty() {
+                try await actor.seedWithSampleData()
+            }
+
             self.isInitialized = true
         } catch {
             self.initializationError = "Failed to initialize database: \(error.localizedDescription)"
